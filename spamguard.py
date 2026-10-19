@@ -20,7 +20,7 @@ import time
 from pathlib import Path
 
 from telethon import TelegramClient, events, functions
-from telethon.errors import SessionPasswordNeededError
+from telethon.errors import PhoneCodeExpiredError, PhoneCodeInvalidError, SessionPasswordNeededError
 from telethon.tl.types import User
 
 HERE = Path(os.environ.get("TG_DATA_DIR") or Path(__file__).resolve().parent)
@@ -160,6 +160,10 @@ async def login(argv):
         st = json.loads(state.read_text())
         try:
             await client.sign_in(st["phone"], argv[1], phone_code_hash=st["hash"])
+        except PhoneCodeInvalidError:
+            sys.exit("That code is wrong. Use the NEWEST code in your Telegram app and run login code again.")
+        except PhoneCodeExpiredError:
+            sys.exit("That code expired. Run: login send <phone>, then login code <new code>.")
         except SessionPasswordNeededError:
             if len(argv) < 3:
                 sys.exit("2FA password required: login code <code> <password>")
