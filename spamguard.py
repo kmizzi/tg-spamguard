@@ -185,7 +185,7 @@ async def main():
     global client
     if not API_ID or not API_HASH:
         sys.exit("Set TG_API_ID and TG_API_HASH (see .env.example)")
-    client = TelegramClient(str(HERE / "spamguard"), API_ID, API_HASH)
+    client = TelegramClient(str(HERE / "spamguard"), API_ID, API_HASH, device_model="tg-spamguard", app_version="1.0")
     client.add_event_handler(on_dm, events.NewMessage(incoming=True, func=lambda e: e.is_private))
     cmd = sys.argv[1] if len(sys.argv) > 1 else "run"
     if cmd == "login":
