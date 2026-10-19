@@ -21,7 +21,7 @@ from pathlib import Path
 
 from telethon import TelegramClient, events, functions
 from telethon.errors import PhoneCodeExpiredError, PhoneCodeInvalidError, SessionPasswordNeededError
-from telethon.tl.types import User
+from telethon.tl.types import Message, User
 
 HERE = Path(os.environ.get("TG_DATA_DIR") or Path(__file__).resolve().parent)
 
@@ -89,8 +89,10 @@ async def trusted(u: User) -> str | None:
         return "verified"
     if u.id in whitelist():
         return "whitelist"
-    # len(), not .total: .total is the whole chat's count, not the filtered one
-    if len(await client.get_messages(u, limit=1, from_user="me")):
+    # Real messages only: .total counts the whole chat, and service markers such as
+    # "history cleared" are filed as yours even though you never wrote anything.
+    mine = await client.get_messages(u, limit=10, from_user="me")
+    if any(type(m) is Message for m in mine):
         return "you replied before"
     if (await client.get_messages(u, limit=0)).total > LONG_CHAT:
         return "long conversation"
@@ -103,6 +105,8 @@ async def trusted(u: User) -> str | None:
 def score(u: User, text: str, cold: bool = False) -> tuple[int, list[str]]:
     if u.scam or u.fake:
         return 99, ["flagged scam/fake by Telegram"]
+    if u.deleted and cold:
+        return 99, ["deleted account, one-way chat (usually a banned spammer)"]
     s, why = 0, []
     if cold:
         s, why = s + 2, why + ["cold opener"]
@@ -119,6 +123,8 @@ def score(u: User, text: str, cold: bool = False) -> tuple[int, list[str]]:
 
 
 async def nuke(u: User):
+    if u.deleted:  # nothing left to report or block; just clear the leftover chat
+        return await client.delete_dialog(u, revoke=True)
     await client(functions.messages.ReportSpamRequest(peer=u))
     await client(functions.contacts.BlockRequest(id=u))
     await client.delete_dialog(u, revoke=True)
@@ -153,7 +159,10 @@ async def scan(act: bool):
         if not d.is_user or not isinstance(d.entity, User):
             continue
         msgs = await client.get_messages(d.entity, limit=5)
-        text = "\n".join(m.raw_text or "" for m in reversed(msgs) if not m.out)
+        theirs = [m for m in reversed(msgs) if not m.out and type(m) is Message]
+        if not theirs and not d.entity.deleted:
+            continue  # they never sent anything real (e.g. only a timer change); no evidence
+        text = "\n".join(m.raw_text or "" for m in theirs)
         await judge(d.entity, text, act, "scan")
 
 

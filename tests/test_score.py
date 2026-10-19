@@ -4,7 +4,7 @@ import spamguard
 
 
 def user(**kw):
-    base = dict(scam=False, fake=False, photo=object(), username="someone")
+    base = dict(scam=False, fake=False, deleted=False, photo=object(), username="someone")
     return SimpleNamespace(**{**base, **kw})
 
 
@@ -46,4 +46,14 @@ def test_cold_hello_from_account_without_username_is_spam():
 
 def test_cold_hello_from_complete_profile_is_left_alone():
     s, _ = spamguard.score(user(), "Hi Kalvin, we met at the conference", cold=True)
+    assert s < spamguard.THRESHOLD
+
+
+def test_deleted_account_with_one_way_chat_is_cleaned_up():
+    s, _ = spamguard.score(user(deleted=True), "", cold=True)
+    assert s >= spamguard.THRESHOLD
+
+
+def test_deleted_account_with_real_history_is_not_cold_spam():
+    s, _ = spamguard.score(user(deleted=True), "see you tomorrow", cold=False)
     assert s < spamguard.THRESHOLD

@@ -21,7 +21,7 @@ A sender is **never touched** if any of these are true:
 |---|---|
 | They're in your contacts (or you're in theirs) | |
 | They're a bot, a verified account or Telegram support | |
-| You have ever sent them a message | you started or replied to the chat |
+| You have ever sent them a real message | you started or replied (system markers like "history cleared" don't count) |
 | You share a group or channel with them | probably a real person |
 | The chat has more than 20 messages | an established conversation |
 | Their user id is in `whitelist.txt` | manual override |
@@ -31,6 +31,7 @@ Messages from everyone else are scored:
 | Signal | Points |
 |---|---|
 | Telegram itself flags the account `SCAM` / `FAKE` | instant spam |
+| Deleted account with a short one-way chat (a banned spammer's leftover) | chat cleared |
 | Short one-way chat (≤5 messages, only they wrote) — a cold opener | +2 |
 | Contains a link, domain or `@handle` | +2 |
 | Contains a spam keyword (crypto, invest, airdrop, forex, dating, loan, …) | +2 |
