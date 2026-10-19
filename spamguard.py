@@ -87,7 +87,8 @@ async def trusted(u: User) -> str | None:
         return "verified"
     if u.id in whitelist():
         return "whitelist"
-    if (await client.get_messages(u, limit=1, from_user="me")).total:
+    # len(), not .total: .total is the whole chat's count, not the filtered one
+    if len(await client.get_messages(u, limit=1, from_user="me")):
         return "you replied before"
     common = await client(functions.messages.GetCommonChatsRequest(user_id=u, max_id=0, limit=1))
     if common.chats:
