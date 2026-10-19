@@ -40,6 +40,8 @@ API_ID = int(os.environ.get("TG_API_ID", "0"))
 API_HASH = os.environ.get("TG_API_HASH", "")
 MODE = os.environ.get("TG_MODE", "log")
 THRESHOLD = int(os.environ.get("TG_THRESHOLD", "3"))
+LONG_CHAT = 20  # a stranger chat longer than this is a real conversation, never spam
+COLD_CHAT = 5   # a one-way chat this short is a cold opener
 LOG = HERE / "actions.jsonl"
 WHITELIST = HERE / "whitelist.txt"  # one user id per line, '#' comments ok
 
@@ -90,16 +92,20 @@ async def trusted(u: User) -> str | None:
     # len(), not .total: .total is the whole chat's count, not the filtered one
     if len(await client.get_messages(u, limit=1, from_user="me")):
         return "you replied before"
+    if (await client.get_messages(u, limit=0)).total > LONG_CHAT:
+        return "long conversation"
     common = await client(functions.messages.GetCommonChatsRequest(user_id=u, max_id=0, limit=1))
     if common.chats:
         return "shared group"
     return None
 
 
-def score(u: User, text: str) -> tuple[int, list[str]]:
+def score(u: User, text: str, cold: bool = False) -> tuple[int, list[str]]:
     if u.scam or u.fake:
         return 99, ["flagged scam/fake by Telegram"]
     s, why = 0, []
+    if cold:
+        s, why = s + 2, why + ["cold opener"]
     if LINK.search(text):
         s, why = s + 2, why + ["link/handle"]
     kw = KEYWORDS.search(text)
@@ -123,7 +129,8 @@ async def judge(u: User, text: str, act: bool, source: str):
     who = {"id": u.id, "name": " ".join(filter(None, [u.first_name, u.last_name])), "username": u.username}
     if reason:
         return
-    s, why = score(u, text)
+    cold = (await client.get_messages(u, limit=0)).total <= COLD_CHAT
+    s, why = score(u, text, cold)
     verdict = "spam" if s >= THRESHOLD else "stranger"
     acted = False
     if verdict == "spam" and act:

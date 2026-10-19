@@ -37,3 +37,13 @@ def test_keyword_match_is_reported_lowercase():
 def test_romance_opener_from_faceless_account_is_spam():
     s, _ = spamguard.score(user(username=None), "Looking for chemistry?")
     assert s >= spamguard.THRESHOLD
+
+
+def test_cold_hello_from_account_without_username_is_spam():
+    s, _ = spamguard.score(user(username=None), "Hello", cold=True)
+    assert s >= spamguard.THRESHOLD
+
+
+def test_cold_hello_from_complete_profile_is_left_alone():
+    s, _ = spamguard.score(user(), "Hi Kalvin, we met at the conference", cold=True)
+    assert s < spamguard.THRESHOLD

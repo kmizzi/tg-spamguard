@@ -23,6 +23,7 @@ A sender is **never touched** if any of these are true:
 | They're a bot, a verified account or Telegram support | |
 | You have ever sent them a message | you started or replied to the chat |
 | You share a group or channel with them | probably a real person |
+| The chat has more than 20 messages | an established conversation |
 | Their user id is in `whitelist.txt` | manual override |
 
 Messages from everyone else are scored:
@@ -30,13 +31,15 @@ Messages from everyone else are scored:
 | Signal | Points |
 |---|---|
 | Telegram itself flags the account `SCAM` / `FAKE` | instant spam |
+| Short one-way chat (≤5 messages, only they wrote) — a cold opener | +2 |
 | Contains a link, domain or `@handle` | +2 |
 | Contains a spam keyword (crypto, invest, airdrop, forex, dating, loan, …) | +2 |
 | No profile photo | +1 |
 | No username | +1 |
 
-A score of **3 or more** (`TG_THRESHOLD`) counts as spam. A plain "hi" from a stranger with no
-photo and no username scores 2, so it's logged as `stranger` and left alone.
+A score of **3 or more** (`TG_THRESHOLD`) counts as spam. A cold "Hello" from an account with no
+username scores 3 and is removed; a cold "Hi, we met at the conference" from a complete profile
+(photo and username) scores 2, so it's logged as `stranger` and left alone.
 
 Every decision is appended to `actions.jsonl` with the sender, score, reasons and message text,
 so you can review false positives before trusting it.
