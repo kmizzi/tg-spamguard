@@ -49,7 +49,10 @@ KEYWORDS = re.compile(
     r"earn|income|passive|sign ?up|bonus|giveaway|casino|bet(ting)?|loan|"
     r"dating|lonely|sexy|onlyfans|promo(tion)?|followers|subscribers|seo|"
     r"recruit(er|ing)?|remote job|part[- ]time|hiring|telegram premium|"
-    r"wallet|binance|mining|signal(s)?|pump|vip group|dm me|wrong number)\b",
+    r"wallet|binance|mining|signal(s)?|pump|vip group|dm me|wrong number|"
+    r"chemistry|dear|darling|handsome|beautiful|gorgeous|single|lonely|"
+    r"looking for (a )?(friend|partner|love|relationship)|nice to meet you|"
+    r"represents you|are you (free|busy|available)|can we (talk|chat)|hookup|nudes?)\b",
     re.I,
 )
 EXTRA = [k.strip() for k in os.environ.get("TG_EXTRA_KEYWORDS", "").split(",") if k.strip()]

@@ -32,3 +32,8 @@ def test_telegram_scam_flag_always_wins():
 def test_keyword_match_is_reported_lowercase():
     _, why = spamguard.score(user(), "Join our VIP GROUP today")
     assert "keyword:vip group" in why
+
+
+def test_romance_opener_from_faceless_account_is_spam():
+    s, _ = spamguard.score(user(username=None), "Looking for chemistry?")
+    assert s >= spamguard.THRESHOLD
